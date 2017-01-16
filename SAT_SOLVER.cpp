@@ -11,6 +11,7 @@
 #include <chrono>
 #include <thread>
 #include <algorithm>
+#include <fstream>
 
 using namespace std;
 
@@ -19,10 +20,22 @@ struct abs_less {
         return abs(a) < abs(b);
     }
 };
+
 int main() {
     
 //    std::this_thread::sleep_for(std::chrono::nanoseconds(100000000));
-    
+    /*
+    if (getenv("MYARQ")) {
+        ifstream arq(getenv("MYARQ"));
+        cin.rdbuf(arq.rdbuf());
+    }
+    */
+   /*
+    string filename = "large_sat.txt";
+    ifstream fin;
+    fin.open(filename);
+    assert(fin.is_open());
+    */
     
     SAT mySat(cin);
     
@@ -38,9 +51,9 @@ int main() {
             cout << solution[i] << " ";
         }
     }
-    if (solution.empty()) {
+    if (!solution.empty()) {
         if (mySat.verify(solution)) {
-            cout << "VERIFIED!\n";
+            cout << "VERIFIED!" << endl;
         }
         else {
             cout << "Incorrect solution :(\n";

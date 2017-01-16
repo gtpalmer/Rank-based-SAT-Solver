@@ -29,7 +29,7 @@ struct variable {
 };
 struct clause {
     vector<int> satisfiers;
-    int count;
+    int count = 0;
 };
 
 class SAT {
@@ -61,6 +61,7 @@ public:
     //check if given solution vector solves all clauses
     bool verify(const vector<int> & vec);
     
+    
 private:
     vector<variable> variables;
     vector<clause> clauses;
@@ -71,6 +72,7 @@ private:
     unordered_map<int, bool> chosen;
     uint clause_count;
     int num_choices = 0;
+  //  int debug = 0;
     
     //Looks at the most recent element in choices and updates all necessary
     //information, including
