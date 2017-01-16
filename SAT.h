@@ -58,6 +58,9 @@ public:
     
     vector<int> solve();
     
+    //check if given solution vector solves all clauses
+    bool verify(const vector<int> & vec);
+    
 private:
     vector<variable> variables;
     vector<clause> clauses;
@@ -65,7 +68,9 @@ private:
     vector<uint> unit_clauses;
     vector<bool> curr_variables;
     vector<int> choices;
+    unordered_map<int, bool> chosen;
     uint clause_count;
+    int num_choices = 0;
     
     //Looks at the most recent element in choices and updates all necessary
     //information, including
@@ -83,9 +88,14 @@ private:
     // 4. Indicate whether or not a solution is still possible (true = solvable)
     bool update_forward();
     
+    //Undo everything from above
+    void update_backward();
+    
     //Takes a clause index as input and adjusts scores of variables that solve this
     //clause, decreasing them appropriately.
     void update_scores_forward(uint c_idx);
+    
+    void update_scores_backward(uint c_idx);
     
     //use whenever variable.affect or variable.affected is modified
     void update_score(uint idx) {

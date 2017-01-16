@@ -21,7 +21,7 @@ struct abs_less {
 };
 int main() {
     
-    std::this_thread::sleep_for(std::chrono::nanoseconds(100000000));
+//    std::this_thread::sleep_for(std::chrono::nanoseconds(100000000));
     
     
     SAT mySat(cin);
@@ -39,6 +39,12 @@ int main() {
         }
     }
     if (solution.empty()) {
-        mySat.verify(solution);
+        if (mySat.verify(solution)) {
+            cout << "VERIFIED!\n";
+        }
+        else {
+            cout << "Incorrect solution :(\n";
+        }
+
     }
 }
