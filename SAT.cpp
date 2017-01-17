@@ -142,17 +142,27 @@ SAT::SAT(istream &is) {
             }
         }
         //compute initial scores
-        for (uint j = 0; j < variables[i].pos_affects.size(); j++) {
+        for (auto it = variables[i].pos_affects.begin();
+                          it != variables[i].pos_affects.end(); it++) {
+            variables[i].affect *= it->second;
+        }
+        for (auto it = variables[i].neg_affects.begin();
+             it != variables[i].neg_affects.end(); it++) {
+            variables[i].affect *= it->second;
+        }
+        /*
+        for (uint j = 1; j < variables.size(); j++) {
             if (variables[i].pos_affects.find(j) != variables[i].pos_affects.end()) {
                 variables[i].affect *= variables[i].pos_affects[j];
             }
 
         }
-        for (uint j = 0; j < variables[i].neg_affects.size(); j++) {
+        for (uint j = 1; j < variables.size(); j++) {
             if (variables[i].neg_affects.find(j) != variables[j].neg_affects.end()) {
                 variables[i].affect *= variables[i].neg_affects[j];
             }
         }
+         */
     }
     
     if (curr_clause != num_clauses) {
@@ -374,7 +384,7 @@ void SAT::update_scores_forward(const uint c_idx) {
                     int amount = --variables[j_idx].pos_affects[k_idx];
                     
                     if (amount > 0) {
-                        variables[j_idx].affect /= amount + 1;
+                        variables[j_idx].affect /= (amount + 1);
                         variables[j_idx].affect *= amount;
                         assert(variables[j_idx].affect >= 1);
                         update_score(j_idx);

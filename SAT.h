@@ -24,7 +24,7 @@ struct variable {
     unordered_map<uint, int> pos_affects;
     unordered_map<uint, int> neg_affects;
     int affected = 0;
-    int affect = 1;
+    double affect = 1;
     int score = 0;
 };
 struct clause {
