@@ -229,6 +229,7 @@ vector<int> SAT::solve() {
             choose_next_var();
         }
         else {
+            unit_clauses.clear();
             update_backward();
             int temp = choices.back();
             choices.pop_back();
@@ -299,10 +300,9 @@ bool SAT::update_forward() {
         //reduce clause counts for clauses containing complement variables
         for (uint i = 0; i < variables[idx].neg_sat.size(); i++) {
             const uint c_idx = variables[idx].neg_sat[i];
-            if (c_idx == 1729) {
-                
-            }
+
             clauses[c_idx].count--;
+            assert(clauses[c_idx].count >= 0);
             //Check if we now have a unit clause or a broken constrain.
             //Only applies if the clause hasn't been satisfied yet
             if (clauses[c_idx].count <= 1 && curr_clauses[c_idx]) {
@@ -344,10 +344,11 @@ bool SAT::update_forward() {
         //reduce clause counts for clauses containing complement variables
         for (uint i = 0; i < variables[idx].pos_sat.size(); i++) {
             const uint c_idx = variables[idx].pos_sat[i];
+            
             clauses[c_idx].count--;
-            if (c_idx == 1729) {
-                
-            }
+            assert(clauses[c_idx].count >= 0);
+            //Check if we now have a unit clause or a broken constrain.
+            //Only applies if the clause hasn't been satisfied yet
             if (clauses[c_idx].count <= 1 && curr_clauses[c_idx]) {
                 if (clauses[c_idx].count == 1) {
                     unit_clauses.push_back(c_idx);
