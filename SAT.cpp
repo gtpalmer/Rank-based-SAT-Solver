@@ -144,11 +144,11 @@ SAT::SAT(istream &is) {
         //compute initial scores
         for (auto it = variables[i].pos_affects.begin();
                           it != variables[i].pos_affects.end(); it++) {
-            variables[i].affect *= it->second;
+            variables[i].pos_affect *= it->second;
         }
         for (auto it = variables[i].neg_affects.begin();
              it != variables[i].neg_affects.end(); it++) {
-            variables[i].affect *= it->second;
+            variables[i].neg_affect *= it->second;
         }
         /*
         for (uint j = 1; j < variables.size(); j++) {
@@ -209,16 +209,23 @@ vector<int> SAT::solve() {
     
     //Select starting choice
     int best_var = 1;
-    int best_var_score = variables[1].affect;
+    int best_var_score = variables[1].pos_affect + variables[1].neg_affect;
     for (uint i = 2; i < variables.size(); i++) {
-        if (variables[i].affect > best_var_score) {
-            best_var_score = variables[i].affect;
+        if ((variables[i].pos_affect + variables[i].neg_affect) > best_var_score) {
+            best_var_score = variables[i].pos_affect + variables[i].neg_affect;
             best_var = i;
         }
     }
     
-    choices.push_back(best_var);
-    choices.push_back(-best_var);
+    //Push back best choice
+    if (variables[best_var].pos_affect > variables[best_var].neg_affect) {
+        choices.push_back(best_var);
+        choices.push_back(-best_var);
+    }
+    else {
+        choices.push_back(-best_var);
+        choices.push_back(best_var);
+    }
     curr_variables[static_cast<uint>(best_var)] = false;
     num_choices++;
     while (!choices.empty()) {
@@ -271,12 +278,37 @@ bool SAT::verify(const vector<int> &vec) {
     return true;
 }
 
+void SAT::print_initial_ranks() {
+    input_map input;
+    for (uint i = 1; i < variables.size(); i++) {
+        input[i].first = variables[i].pos_affects;
+        input[i].second = variables[i].neg_affects;
+    }
+    
+    Ranker rank_it(input);
+    uint best_choice = rank_it.find_best_choice();
+    rank_it.print_results();
+    cout << endl << "Best choice is: " << best_choice << endl;
+    
+}
+
+void SAT::print_old_initial_ranks() {
+    //Select starting choice
+    int best_var = 1;
+    int best_var_score = variables[1].pos_affect + variables[1].neg_affect;
+    cout << "1 | " << best_var_score << endl;
+    for (uint i = 2; i < variables.size(); i++) {
+        cout << i << " | " << variables[i].pos_affect + variables[i].neg_affect << endl;
+        if ((variables[i].pos_affect + variables[i].neg_affect) > best_var_score) {
+            best_var_score = variables[i].pos_affect + variables[i].neg_affect;
+            best_var = i;
+        }
+    }
+}
+//_________________________Private_________________________
 bool SAT::update_forward() {
     chosen[choices.back()] = true;
     uint idx = static_cast<uint>(abs(choices.back()));
-    if (idx == 1035 || idx == 1033) {
-        
-    }
     curr_variables[idx] = false;
     bool constraint_broken = false;
     if (choices.back() > 0) {
@@ -307,9 +339,6 @@ bool SAT::update_forward() {
             //Only applies if the clause hasn't been satisfied yet
             if (clauses[c_idx].count <= 1 && curr_clauses[c_idx]) {
                 if (clauses[c_idx].count == 1) {
-                    if (c_idx == 82) {
-                        
-                    }
                     unit_clauses.push_back(c_idx);
                 }
                 else {
@@ -365,7 +394,17 @@ bool SAT::update_forward() {
             }
         }
     }
-    
+    //Check for a repeat state... all decisions will be the same so we are
+    //duplicating work.
+    if (states.find(curr_variables) != states.end()) {
+        if (states[curr_variables].find(curr_clauses)
+            != states[curr_variables].end()) {
+            constraint_broken = true;
+        }
+    }
+    else {
+        states[curr_variables][curr_clauses] = true;
+    }
     return !constraint_broken;
 }
 
@@ -385,9 +424,9 @@ void SAT::update_scores_forward(const uint c_idx) {
                     int amount = --variables[j_idx].pos_affects[k_idx];
                     
                     if (amount > 0) {
-                        variables[j_idx].affect /= (amount + 1);
-                        variables[j_idx].affect *= amount;
-                        assert(variables[j_idx].affect >= 1);
+                        variables[j_idx].pos_affect /= (amount + 1);
+                        variables[j_idx].pos_affect *= amount;
+                        assert(variables[j_idx].pos_affect >= 1);
                         update_score(j_idx);
                     }
                     else {
@@ -404,9 +443,9 @@ void SAT::update_scores_forward(const uint c_idx) {
                     int amount = --variables[j_idx].pos_affects[k_idx];
                     
                     if (amount > 0) {
-                        variables[j_idx].affect /= amount + 1;
-                        variables[j_idx].affect *= amount;
-                        assert(variables[j_idx].affect >= 1);
+                        variables[j_idx].pos_affect /= amount + 1;
+                        variables[j_idx].pos_affect *= amount;
+                        assert(variables[j_idx].pos_affect >= 1);
                         update_score(j_idx);
                     }
                     else {
@@ -425,9 +464,9 @@ void SAT::update_scores_forward(const uint c_idx) {
                     int amount = --variables[j_idx].neg_affects[k_idx];
                     
                     if (amount > 0) {
-                        variables[j_idx].affect /= amount + 1;
-                        variables[j_idx].affect *= amount;
-                        assert(variables[j_idx].affect >= 1);
+                        variables[j_idx].neg_affect /= amount + 1;
+                        variables[j_idx].neg_affect *= amount;
+                        assert(variables[j_idx].neg_affect >= 1);
                         update_score(j_idx);
                     }
                     else {
@@ -442,9 +481,9 @@ void SAT::update_scores_forward(const uint c_idx) {
                     int amount = --variables[j_idx].neg_affects[k_idx];
                     
                     if (amount > 0) {
-                        variables[j_idx].affect /= amount + 1;
-                        variables[j_idx].affect *= amount;
-                        assert(variables[j_idx].affect >= 1);
+                        variables[j_idx].neg_affect /= amount + 1;
+                        variables[j_idx].neg_affect *= amount;
+                        assert(variables[j_idx].neg_affect >= 1);
                         update_score(j_idx);
                     }
                     else {
@@ -470,9 +509,6 @@ void SAT::update_backward() {
         for (uint i = 0; i < variables[idx].pos_sat.size(); i++) {
             curr_clauses[variables[idx].pos_sat[i]] = true;
             uint c_idx = variables[idx].pos_sat[i];
-            if (c_idx == 1729) {
-                
-            }
             for (uint j = 0; j < clauses[c_idx].satisfiers.size(); j++) {
                     if (chosen.find(clauses[c_idx].satisfiers[j]) != chosen.end()) {
                         curr_clauses[variables[idx].pos_sat[i]] = false;
@@ -505,9 +541,6 @@ void SAT::update_backward() {
         for (uint i = 0; i < variables[idx].neg_sat.size(); i++) {
             curr_clauses[variables[idx].neg_sat[i]] = true;
             uint c_idx = variables[idx].neg_sat[i];
-            if (c_idx == 1729) {
-                
-            }
             for (uint j = 0; j < clauses[c_idx].satisfiers.size(); j++) {
                 if (chosen.find(clauses[c_idx].satisfiers[j]) != chosen.end()) {
                     curr_clauses[variables[idx].neg_sat[i]] = false;
@@ -548,9 +581,9 @@ void SAT::update_scores_backward(uint c_idx) {
                 if (variables[j_idx].pos_affects.find(k_idx)
                     != variables[j_idx].pos_affects.end()) {
                     int amount = ++variables[j_idx].pos_affects[k_idx];
-                    variables[j_idx].affect /= (amount - 1);
-                    variables[j_idx].affect *= amount;
-                    assert(variables[j_idx].affect >= 1);
+                    variables[j_idx].pos_affect /= (amount - 1);
+                    variables[j_idx].pos_affect *= amount;
+                    assert(variables[j_idx].pos_affect >= 1);
                     update_score(j_idx);
                 }
                 else {
@@ -565,9 +598,9 @@ void SAT::update_scores_backward(uint c_idx) {
                 if (variables[j_idx].pos_affects.find(k_idx)
                     != variables[j_idx].pos_affects.end()) {
                     int amount = ++variables[j_idx].pos_affects[k_idx];
-                    variables[j_idx].affect /= (amount - 1);
-                    variables[j_idx].affect *= amount;
-                    assert(variables[j_idx].affect >= 1);
+                    variables[j_idx].pos_affect /= (amount - 1);
+                    variables[j_idx].pos_affect *= amount;
+                    assert(variables[j_idx].pos_affect >= 1);
                     update_score(j_idx);
                 }
                 else {
@@ -584,9 +617,9 @@ void SAT::update_scores_backward(uint c_idx) {
                 if (variables[j_idx].neg_affects.find(k_idx)
                     != variables[j_idx].neg_affects.end()) {
                     int amount = ++variables[j_idx].neg_affects[k_idx];
-                    variables[j_idx].affect /= (amount - 1);
-                    variables[j_idx].affect *= amount;
-                    assert(variables[j_idx].affect >= 1);
+                    variables[j_idx].neg_affect /= (amount - 1);
+                    variables[j_idx].neg_affect *= amount;
+                    assert(variables[j_idx].neg_affect >= 1);
                     update_score(j_idx);
                 }
                 else {
@@ -599,9 +632,9 @@ void SAT::update_scores_backward(uint c_idx) {
                 if (variables[j_idx].neg_affects.find(k_idx)
                     != variables[j_idx].neg_affects.end()) {
                     int amount = ++variables[j_idx].neg_affects[k_idx];
-                    variables[j_idx].affect /= (amount - 1);
-                    variables[j_idx].affect *= amount;
-                    assert(variables[j_idx].affect >= 1);
+                    variables[j_idx].neg_affect /= (amount - 1);
+                    variables[j_idx].neg_affect *= amount;
+                    assert(variables[j_idx].neg_affect >= 1);
                     update_score(j_idx);
                 }
                 else {
@@ -667,7 +700,8 @@ void SAT::choose_next_var() {
                     best_score_idx = i;
                     
                 }
-                assert(variables[i].affect >= 1);
+                assert(variables[i].pos_affect >= 1);
+                assert(variables[i].neg_affect >= 1);
             }
         }
         if (best_score_idx == 0) {
@@ -676,9 +710,19 @@ void SAT::choose_next_var() {
         }
         num_choices++;
         cout << num_choices << endl;
-        choices.push_back(static_cast<int>(best_score_idx));
-        choices.push_back(-static_cast<int>(best_score_idx));
-        chosen[-static_cast<int>(best_score_idx)] = true;
+        
+        //For satisfiable CNF's, we choose the most promising branch first
+        if (variables[best_score_idx].pos_affect > variables[best_score_idx].neg_affect) {
+            choices.push_back(static_cast<int>(best_score_idx));
+            choices.push_back(-static_cast<int>(best_score_idx));
+            chosen[-static_cast<int>(best_score_idx)] = true;
+        }
+        else {
+            choices.push_back(-static_cast<int>(best_score_idx));
+            choices.push_back(static_cast<int>(best_score_idx));
+            chosen[static_cast<int>(best_score_idx)] = true;
+        }
+        
     }
     
 }

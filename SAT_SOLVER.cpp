@@ -30,16 +30,20 @@ int main() {
         cin.rdbuf(arq.rdbuf());
     }
     */
-   /*
-    string filename = "large_sat.txt";
+    
+    string filename = "uf20-03.cnf";
     ifstream fin;
     fin.open(filename);
     assert(fin.is_open());
-    */
     
-    SAT mySat(cin);
     
-    vector<int> solution = mySat.solve();
+    SAT mySat(fin);
+    
+    mySat.print_old_initial_ranks();
+    //mySat.print_initial_ranks();
+    
+    /*
+     vector<int> solution = mySat.solve();
     if (solution.empty()) {
         cout << "NO SOLUTION\n";
     }
@@ -60,4 +64,5 @@ int main() {
         }
 
     }
+     */
 }

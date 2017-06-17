@@ -74,7 +74,7 @@ PARTIAL_SUBMITFILE = partialsubmit.tar.gz
 FULL_SUBMITFILE = fullsubmit.tar.gz
 
 #Default Flags
-CXXFLAGS = -std=c++14 -Wall -Werror -Wextra -pedantic 
+CXXFLAGS = -std=c++14 -Wall -Wextra -pedantic 
 
 # make release - will compile "all" with $(CXXFLAGS) and the -O3 flag
 #				 also defines NDEBUG so that asserts will not check

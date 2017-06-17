@@ -14,9 +14,9 @@
 #include <iostream>
 #include <unordered_map>
 #include <cassert>
+#include "Ranker.h"
 
 using namespace std;
-#endif /* SAT_h */
 
 struct variable {
     vector<uint> pos_sat;
@@ -24,9 +24,11 @@ struct variable {
     unordered_map<uint, int> pos_affects;
     unordered_map<uint, int> neg_affects;
     int affected = 0;
-    double affect = 1;
+    double pos_affect = 1;
+    double neg_affect = 1;
     int score = 0;
 };
+
 struct clause {
     vector<int> satisfiers;
     int count = 0;
@@ -61,6 +63,10 @@ public:
     //check if given solution vector solves all clauses
     bool verify(const vector<int> & vec);
     
+    void print_initial_ranks();
+    
+    void print_old_initial_ranks();
+    
     
 private:
     vector<variable> variables;
@@ -70,6 +76,7 @@ private:
     vector<bool> curr_variables;
     vector<int> choices;
     unordered_map<int, bool> chosen;
+    unordered_map<vector<bool>, unordered_map<vector<bool>, bool>> states;
     uint clause_count;
     int num_choices = 0;
   //  int debug = 0;
@@ -101,7 +108,8 @@ private:
     
     //use whenever variable.affect or variable.affected is modified
     void update_score(uint idx) {
-        variables[idx].score = variables[idx].affected * variables[idx].affect;
+        variables[idx].score = variables[idx].affected *
+            (variables[idx].pos_affect + variables[idx].neg_affect);
     }
     
     //returns a vector containing the variables that solve the boolean formula
@@ -110,3 +118,5 @@ private:
     //Searches for the next variable and adds it to the stack
     void choose_next_var();
 };
+
+#endif /* SAT_h */
