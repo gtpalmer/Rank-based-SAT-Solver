@@ -79,7 +79,6 @@ private:
     unordered_map<vector<bool>, unordered_map<vector<bool>, bool>> states;
     uint clause_count;
     int num_choices = 0;
-  //  int debug = 0;
     
     //Looks at the most recent element in choices and updates all necessary
     //information, including

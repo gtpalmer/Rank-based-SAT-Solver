@@ -208,6 +208,29 @@ vector<int> SAT::solve() {
     }
     
     //Select starting choice
+    //New ranking system________________________________
+    input_map input;
+    for (uint i = 1; i < variables.size(); i++) {
+        input[i].first = variables[i].pos_affects;
+        input[i].second = variables[i].neg_affects;
+    }
+    Ranker rank_it(input);
+    uint best_choice = rank_it.find_best_choice();
+    
+    //No way to differentiate between whether to go pos or neg in this
+    //situation so we go neg by default
+    choices.push_back(static_cast<int>(best_choice));
+    choices.push_back(-static_cast<int>(best_choice));
+    chosen[-static_cast<int>(best_choice)] = true;
+    
+    cout << "\n\n\n CHOICE " << ++num_choices << " WITH " << input.size()
+    << "VARIABLES IS: " << best_choice << "\n\n" << endl;
+    
+    //__________________________________________________
+    
+    
+    //________________________OLD RANKER____________________________________
+    /*
     int best_var = 1;
     int best_var_score = variables[1].pos_affect + variables[1].neg_affect;
     for (uint i = 2; i < variables.size(); i++) {
@@ -226,8 +249,13 @@ vector<int> SAT::solve() {
         choices.push_back(-best_var);
         choices.push_back(best_var);
     }
-    curr_variables[static_cast<uint>(best_var)] = false;
-    num_choices++;
+    */
+    //______________________OLD RANKER_______________________________________
+    
+    
+    
+    curr_variables[best_choice] = false;
+    //num_choices++;
     while (!choices.empty()) {
         if (update_forward()) {
             if (clause_count == 0) {
@@ -679,6 +707,9 @@ void SAT::choose_next_var() {
         chosen[satisfier] = true;
     }
     else {
+        //Old ranking system
+        
+        /*
         int best_score = 0;
         uint best_score_idx = 0;
         for (uint i = 1; i < variables.size(); i++) {
@@ -708,8 +739,6 @@ void SAT::choose_next_var() {
             cerr << "Disjunct clause group detected. TODO: Handle this case" << endl;
             exit(1);
         }
-        num_choices++;
-        cout << num_choices << endl;
         
         //For satisfiable CNF's, we choose the most promising branch first
         if (variables[best_score_idx].pos_affect > variables[best_score_idx].neg_affect) {
@@ -722,6 +751,39 @@ void SAT::choose_next_var() {
             choices.push_back(static_cast<int>(best_score_idx));
             chosen[static_cast<int>(best_score_idx)] = true;
         }
+        */
+        
+        //New ranking system________________________________
+        input_map input;
+        for (uint i = 1; i < variables.size(); i++) {
+            if(curr_variables[i]) {
+                input[i].first = variables[i].pos_affects;
+                input[i].second = variables[i].neg_affects;
+                for (uint j = 1; j < variables.size(); j++) {
+                    if (!curr_variables[j]) {
+                        input[i].first.erase(j);
+                        input[i].second.erase(j);
+                    }
+                }
+            }
+        }
+        Ranker rank_it(input);
+        uint best_choice = rank_it.find_best_choice();
+        
+        //No way to differentiate between whether to go pos or neg in this
+        //situation so we go neg by default
+        choices.push_back(static_cast<int>(best_choice));
+        choices.push_back(-static_cast<int>(best_choice));
+        chosen[-static_cast<int>(best_choice)] = true;
+        
+        cout << "\n\n\n CHOICE " << ++num_choices << " WITH " << input.size()
+        << "VARIABLES IS: " << best_choice << "\n\n" << endl;
+        
+        //__________________________________________________
+        
+        
+        //num_choices++;
+        cout << num_choices << endl;
         
     }
     

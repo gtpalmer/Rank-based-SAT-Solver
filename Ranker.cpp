@@ -15,6 +15,7 @@ Ranker::Ranker(const input_map & vars) {
         Variables[idx].pos_affects = it->second.first;
         Variables[idx].neg_affects = it->second.second;
     }
+    cout << "\n\n\n\n\n VARIABLES SIZE: " << Variables.size() << "\n\n\n\n" << endl;
 }
 
 void Ranker::change_set(const input_map &vars) {
