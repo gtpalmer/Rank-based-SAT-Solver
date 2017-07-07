@@ -10,7 +10,7 @@
 
 using namespace std;
 
-SAT::SAT(istream &is) {
+SAT::SAT(istream &is, ostream &outstream) : os(outstream) {
     string input;
     while (is >> input) {
         if (input[0] == 'c') {
@@ -166,12 +166,12 @@ SAT::SAT(istream &is) {
     }
     
     if (curr_clause != num_clauses) {
-        cout << "WARNING: Wrong number of clauses detected. Program might "
+        os << "WARNING: Wrong number of clauses detected. Program might "
         << "falsely detect no solution. Num clauses detected: "
         << curr_clause << " compared to desired " << num_clauses << endl;
     }
     
-    cout << "INIT SUCCESSFUL!" << endl;
+    os << "INIT SUCCESSFUL!" << endl;
 }
 
 
@@ -288,7 +288,7 @@ void SAT::print_initial_ranks() {
     Ranker rank_it(input);
     uint best_choice = rank_it.find_best_choice();
     rank_it.print_results();
-    cout << endl << "Best choice is: " << best_choice << endl;
+    os << endl << "Best choice is: " << best_choice << endl;
     
 }
 
@@ -296,9 +296,9 @@ void SAT::print_old_initial_ranks() {
     //Select starting choice
     int best_var = 1;
     int best_var_score = variables[1].pos_affect + variables[1].neg_affect;
-    cout << "1 | " << best_var_score << endl;
+    os << "1 | " << best_var_score << endl;
     for (uint i = 2; i < variables.size(); i++) {
-        cout << i << " | " << variables[i].pos_affect + variables[i].neg_affect << endl;
+        os << i << " | " << variables[i].pos_affect + variables[i].neg_affect << endl;
         if ((variables[i].pos_affect + variables[i].neg_affect) > best_var_score) {
             best_var_score = variables[i].pos_affect + variables[i].neg_affect;
             best_var = i;
@@ -709,7 +709,7 @@ void SAT::choose_next_var() {
             exit(1);
         }
         num_choices++;
-        cout << num_choices << endl;
+        os << num_choices << "\n";
         
         //For satisfiable CNF's, we choose the most promising branch first
         if (variables[best_score_idx].pos_affect > variables[best_score_idx].neg_affect) {

@@ -56,13 +56,17 @@ public:
     //          and a list of each its negation solves. Note that variables[0]
     //          is invalid because variables are 1-indexed. Curr_clauses will
     //          be used to keep track of which
-    SAT(istream &is);
+    SAT(istream &is, ostream &out_stream);
     
+    //If the solver has been properly initialized with a valid Boolean formula,
+    //  a satisfying assignment for that formula will be returned if one exists,
+    //  otherwise an empty vector will be returned.
     vector<int> solve();
     
     //check if given solution vector solves all clauses
     bool verify(const vector<int> & vec);
     
+    //
     void print_initial_ranks();
     
     void print_old_initial_ranks();
@@ -78,8 +82,8 @@ private:
     unordered_map<int, bool> chosen;
     unordered_map<vector<bool>, unordered_map<vector<bool>, bool>> states;
     uint clause_count;
+    ostream &os;
     int num_choices = 0;
-  //  int debug = 0;
     
     //Looks at the most recent element in choices and updates all necessary
     //information, including
