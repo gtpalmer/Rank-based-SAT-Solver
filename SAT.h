@@ -14,7 +14,6 @@
 #include <iostream>
 #include <unordered_map>
 #include <cassert>
-#include "Ranker.h"
 
 using namespace std;
 
@@ -68,9 +67,6 @@ public:
     
     //
     void print_initial_ranks();
-    
-    void print_old_initial_ranks();
-    
     
 private:
     vector<variable> variables;
