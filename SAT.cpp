@@ -278,33 +278,33 @@ bool SAT::verify(const vector<int> &vec) {
     return true;
 }
 
-void SAT::print_initial_ranks() {
-    input_map input;
-    for (uint i = 1; i < variables.size(); i++) {
-        input[i].first = variables[i].pos_affects;
-        input[i].second = variables[i].neg_affects;
-    }
-    
-    Ranker rank_it(input);
-    uint best_choice = rank_it.find_best_choice();
-    rank_it.print_results();
-    os << endl << "Best choice is: " << best_choice << endl;
-    
-}
+//void SAT::print_initial_ranks() {
+//    input_map input;
+//    for (uint i = 1; i < variables.size(); i++) {
+//        input[i].first = variables[i].pos_affects;
+//        input[i].second = variables[i].neg_affects;
+//    }
+//    
+//    Ranker rank_it(input);
+//    uint best_choice = rank_it.find_best_choice();
+//    rank_it.print_results();
+//    os << endl << "Best choice is: " << best_choice << endl;
+//    
+//}
 
-void SAT::print_old_initial_ranks() {
-    //Select starting choice
-    int best_var = 1;
-    int best_var_score = variables[1].pos_affect + variables[1].neg_affect;
-    os << "1 | " << best_var_score << endl;
-    for (uint i = 2; i < variables.size(); i++) {
-        os << i << " | " << variables[i].pos_affect + variables[i].neg_affect << endl;
-        if ((variables[i].pos_affect + variables[i].neg_affect) > best_var_score) {
-            best_var_score = variables[i].pos_affect + variables[i].neg_affect;
-            best_var = i;
-        }
-    }
-}
+//void SAT::print_old_initial_ranks() {
+//    //Select starting choice
+//    int best_var = 1;
+//    int best_var_score = variables[1].pos_affect + variables[1].neg_affect;
+//    os << "1 | " << best_var_score << endl;
+//    for (uint i = 2; i < variables.size(); i++) {
+//        os << i << " | " << variables[i].pos_affect + variables[i].neg_affect << endl;
+//        if ((variables[i].pos_affect + variables[i].neg_affect) > best_var_score) {
+//            best_var_score = variables[i].pos_affect + variables[i].neg_affect;
+//            best_var = i;
+//        }
+//    }
+//}
 //_________________________Private_________________________
 bool SAT::update_forward() {
     chosen[choices.back()] = true;

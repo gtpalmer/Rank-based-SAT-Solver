@@ -66,7 +66,7 @@ public:
     bool verify(const vector<int> & vec);
     
     //
-    void print_initial_ranks();
+    //void print_initial_ranks();
     
 private:
     vector<variable> variables;
