@@ -1,0 +1,12 @@
+{
+   "files.associations": {
+      "algorithm": "cpp",
+      "list": "cpp",
+      "vector": "cpp",
+      "xstring": "cpp",
+      "unordered_map": "cpp",
+      "xhash": "cpp",
+      "xlocale": "cpp",
+      "chrono": "cpp"
+   }
+}

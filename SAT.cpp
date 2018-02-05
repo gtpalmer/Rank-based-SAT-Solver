@@ -193,7 +193,7 @@ vector<int> SAT::solve() {
         }
         assert(satisfier != 0);
         choices.push_back(satisfier);
-        chosen[satisfier] = true;
+        chosen.insert(satisfier);
         unit_clauses.pop_back();
         curr_variables[static_cast<uint>(abs(satisfier))] = false;
         update_forward();
@@ -229,13 +229,15 @@ vector<int> SAT::solve() {
     curr_variables[static_cast<uint>(best_var)] = false;
     num_choices++;
     while (!choices.empty()) {
-        if (update_forward()) {
+        unordered_map<int, int> broken = update_forward();
+        if (broken.empty()) {
             if (clause_count == 0) {
                 return gather_solution();
             }
             choose_next_var();
         }
-        else {
+        //If a repeat state happened
+        else if (broken.count(-1)) {
             unit_clauses.clear();
             update_backward();
             int temp = choices.back();
@@ -244,10 +246,77 @@ vector<int> SAT::solve() {
                 update_backward();
                 temp = choices.back();
                 choices.pop_back();
-            }
-            
+            }  
         }
-        
+        else { //Backjumping
+            unit_clauses.clear();
+        //Keep backtracking until we find clauses that solve our broken clauses
+            int prev = 0;
+            while (!broken.empty()) {
+                //Don't update if we are jumping past a decision
+                if (prev != -choices.back())
+                    update_backward();
+                prev = choices.back();
+                choices.pop_back();
+                if (choices.empty())
+                    break;
+
+                uint idx = static_cast<uint>(abs(choices.back()));
+                
+                if (choices.back() > 0) {
+                    //True if error propogated by a unit clause
+                    bool unit_clause_propogation = false;
+                    if (choices.size() > 1 && 
+                            choices.back() != -choices[choices.size() - 2]) {
+                        for (int val : variables[idx].neg_sat)
+                            if (broken.count(val)) {
+                                //Nothing else can be changed to fix this
+                                if (broken[val] == 1) {
+                                    unit_clause_propogation = true;
+                                    broken.erase(val);
+                                }
+                                //There are still other satisfiers to jump back to
+                                else   
+                                    broken[val]--;
+                            }
+                        }
+                    for (int val : variables[idx].pos_sat) {
+                        broken.erase(val);
+                        if (unit_clause_propogation && 
+                                clauses[val].count == 1) {
+                            //propogate back to cause of unit clause
+                            broken[val] = clauses[idx].satisfiers.size() - 1;
+                        }
+                    }
+                }
+                else {
+                    //True if error propogated by a unit clause
+                    bool unit_clause_propogation = false;
+                    if (choices.size() > 1 && 
+                            choices.back() != -choices[choices.size() - 2]) {
+                        for (int val : variables[idx].pos_sat)
+                            if (broken.count(val)) {
+                                //Nothing else can be changed to fix this
+                                if (broken[val] == 1) {
+                                    unit_clause_propogation = true;
+                                    broken.erase(val);
+                                }
+                                //There are still other satisfiers to jump back to
+                                else   
+                                    broken[val]--;
+                            }
+                        }
+                    for (int val : variables[idx].neg_sat) {
+                        broken.erase(val);
+                        if (unit_clause_propogation && 
+                                clauses[val].count == 1) {
+                            //propogate back to cause of unit clause
+                            broken[val] = clauses[idx].satisfiers.size() - 1;
+                        }
+                    }
+                }
+            }
+        }  
     }
     return {};
 }
@@ -306,11 +375,11 @@ bool SAT::verify(const vector<int> &vec) {
 //    }
 //}
 //_________________________Private_________________________
-bool SAT::update_forward() {
-    chosen[choices.back()] = true;
+unordered_map<int, int> SAT::update_forward() {
+    chosen.insert(choices.back());
     uint idx = static_cast<uint>(abs(choices.back()));
     curr_variables[idx] = false;
-    bool constraint_broken = false;
+    unordered_map<int, int> broken;
     if (choices.back() > 0) {
         //mark false all solved clauses and
         for (uint i = 0; i < variables[idx].pos_sat.size(); i++) {
@@ -332,7 +401,9 @@ bool SAT::update_forward() {
         //reduce clause counts for clauses containing complement variables
         for (uint i = 0; i < variables[idx].neg_sat.size(); i++) {
             const uint c_idx = variables[idx].neg_sat[i];
-
+            if (c_idx == 110) {
+                cout << "Stop here";
+            }
             clauses[c_idx].count--;
             assert(clauses[c_idx].count >= 0);
             //Check if we now have a unit clause or a broken constrain.
@@ -341,9 +412,8 @@ bool SAT::update_forward() {
                 if (clauses[c_idx].count == 1) {
                     unit_clauses.push_back(c_idx);
                 }
-                else {
-                    constraint_broken = true;
-                }
+                else
+                    broken[c_idx] = clauses[c_idx].satisfiers.size() - 1;
             }
             //update affected for all variables associated with this clause
             for (uint j = 0; j < clauses[c_idx].satisfiers.size(); j++) {
@@ -373,7 +443,9 @@ bool SAT::update_forward() {
         //reduce clause counts for clauses containing complement variables
         for (uint i = 0; i < variables[idx].pos_sat.size(); i++) {
             const uint c_idx = variables[idx].pos_sat[i];
-            
+            if (c_idx == 110) {
+                cout << "Stop here";
+            }
             clauses[c_idx].count--;
             assert(clauses[c_idx].count >= 0);
             //Check if we now have a unit clause or a broken constrain.
@@ -382,9 +454,8 @@ bool SAT::update_forward() {
                 if (clauses[c_idx].count == 1) {
                     unit_clauses.push_back(c_idx);
                 }
-                else {
-                    constraint_broken = true;
-                }
+                else 
+                    broken[c_idx] = clauses[c_idx].satisfiers.size() - 1;
             }
             //updated affect for all variables associated with this clause
             for (uint j = 0; j < clauses[c_idx].satisfiers.size(); j++) {
@@ -396,16 +467,15 @@ bool SAT::update_forward() {
     }
     //Check for a repeat state... all decisions will be the same so we are
     //duplicating work.
-    if (states.find(curr_variables) != states.end()) {
-        if (states[curr_variables].find(curr_clauses)
-            != states[curr_variables].end()) {
-            constraint_broken = true;
+    if (states.count(curr_variables)) {
+        if (states[curr_variables].count(curr_clauses)) {
+            broken[-1] = -1;
         }
     }
     else {
-        states[curr_variables][curr_clauses] = true;
+        states[curr_variables].insert(curr_clauses);
     }
-    return !constraint_broken;
+    return broken;
 }
 
 void SAT::update_scores_forward(const uint c_idx) {
@@ -510,9 +580,8 @@ void SAT::update_backward() {
             curr_clauses[variables[idx].pos_sat[i]] = true;
             uint c_idx = variables[idx].pos_sat[i];
             for (uint j = 0; j < clauses[c_idx].satisfiers.size(); j++) {
-                    if (chosen.find(clauses[c_idx].satisfiers[j]) != chosen.end()) {
+                    if (chosen.count(clauses[c_idx].satisfiers[j])) {
                         curr_clauses[variables[idx].pos_sat[i]] = false;
-
                     }
             }
             //If this clause is really now unsolved then we update scores
@@ -542,7 +611,7 @@ void SAT::update_backward() {
             curr_clauses[variables[idx].neg_sat[i]] = true;
             uint c_idx = variables[idx].neg_sat[i];
             for (uint j = 0; j < clauses[c_idx].satisfiers.size(); j++) {
-                if (chosen.find(clauses[c_idx].satisfiers[j]) != chosen.end()) {
+                if (chosen.count(clauses[c_idx].satisfiers[j])) {
                     curr_clauses[variables[idx].neg_sat[i]] = false;
                 }
             }
@@ -676,7 +745,7 @@ void SAT::choose_next_var() {
         assert(satisfier != 0);
         unit_clauses.pop_back();
         choices.emplace_back(satisfier);
-        chosen[satisfier] = true;
+        chosen.insert(satisfier);
     }
     else {
         int best_score = 0;
@@ -687,12 +756,12 @@ void SAT::choose_next_var() {
             if (curr_variables[i]) {
                 if (variables[i].pos_affects.empty()) {
                     choices.push_back(-static_cast<int>(i));
-                    chosen[-static_cast<int>(i)] = true;
+                    chosen.insert(-static_cast<int>(i));
                     return;
                 }
                 if (variables[i].neg_affects.empty()) {
                     choices.push_back(static_cast<uint>(i));
-                    chosen[static_cast<int>(i)] = true;
+                    chosen.insert(static_cast<int>(i));
                     return;
                 }
                 if (variables[i].score > best_score) {
@@ -715,12 +784,12 @@ void SAT::choose_next_var() {
         if (variables[best_score_idx].pos_affect > variables[best_score_idx].neg_affect) {
             choices.push_back(static_cast<int>(best_score_idx));
             choices.push_back(-static_cast<int>(best_score_idx));
-            chosen[-static_cast<int>(best_score_idx)] = true;
+            chosen.insert(-static_cast<int>(best_score_idx));
         }
         else {
             choices.push_back(-static_cast<int>(best_score_idx));
             choices.push_back(static_cast<int>(best_score_idx));
-            chosen[static_cast<int>(best_score_idx)] = true;
+            chosen.insert(static_cast<int>(best_score_idx));
         }
         
     }

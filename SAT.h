@@ -13,6 +13,7 @@
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 #include <cassert>
 
 using namespace std;
@@ -75,8 +76,8 @@ private:
     vector<uint> unit_clauses;
     vector<bool> curr_variables;
     vector<int> choices;
-    unordered_map<int, bool> chosen;
-    unordered_map<vector<bool>, unordered_map<vector<bool>, bool>> states;
+    unordered_set<int> chosen;
+    unordered_map< vector<bool>, unordered_set< vector<bool> > > states;
     uint clause_count;
     ostream &os;
     int num_choices = 0;
@@ -95,7 +96,7 @@ private:
     //    In general if they share more than this clause in common we divide by
     //    the number they share in common and multiply by that number minus 1
     // 4. Indicate whether or not a solution is still possible (true = solvable)
-    bool update_forward();
+    unordered_map<int, int> update_forward();
     
     //Undo everything from above
     void update_backward();
